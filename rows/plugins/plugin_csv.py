@@ -17,7 +17,7 @@
 
 from __future__ import unicode_literals
 
-from io import BytesIO, BufferedReader
+import io
 
 import six
 import unicodecsv
@@ -28,18 +28,18 @@ from rows.plugins.utils import (create_table, get_filename_and_fobj,
 sniffer = unicodecsv.Sniffer()
 
 
-class NotNullBytesWrapper(BufferedReader):
-
-    def read(self, *args, **kwargs):
-        data = super().read(*args, **kwargs)
-        return data.replace(b'\x00', b'')
-
-    def readline(self, *args, **kwargs):
-        data = super().readline(*args, **kwargs)
-        return data.replace(b'\x00', b'')
-
-
 if six.PY2:
+
+    class NotNullBytesWrapper(io.BufferedReader):
+
+        def read(self, *args, **kwargs):
+            data = super(NotNullBytesWrapper, self).read(*args, **kwargs)
+            return data.replace(b'\x00', b'')
+
+        def readline(self, *args, **kwargs):
+            data = super(NotNullBytesWrapper, self).readline(*args, **kwargs)
+            return data.replace(b'\x00', b'')
+
 
     def discover_dialect(sample, encoding=None,
                          delimiters=(b',', b';', b'\t', b'|')):
@@ -60,6 +60,16 @@ if six.PY2:
         return dialect
 
 elif six.PY3:
+
+    class NotNullBytesWrapper(io.BufferedReader):
+
+        def read(self, *args, **kwargs):
+            data = super().read(*args, **kwargs)
+            return data.replace(b'\x00', b'')
+
+        def readline(self, *args, **kwargs):
+            data = super().readline(*args, **kwargs)
+            return data.replace(b'\x00', b'')
 
     def discover_dialect(sample, encoding, delimiters=(',', ';', '\t', '|')):
         """Discover a CSV dialect based on a sample size
@@ -147,7 +157,7 @@ def export_to_csv(table, filename_or_fobj=None, encoding='utf-8',
     if filename_or_fobj is not None:
         _, fobj = get_filename_and_fobj(filename_or_fobj, mode='wb')
     else:
-        fobj = BytesIO()
+        fobj = io.BytesIO()
 
     # TODO: may use `io.BufferedWriter` instead of `ipartition` so user can
     # choose the real size (in Bytes) when to flush to the file system, instead
